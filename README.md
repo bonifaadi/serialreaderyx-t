@@ -2,7 +2,9 @@
 
 This program was built for reading COM Seral which has this format and display it as plot with matplotlib
 
+~~~
 x, y1, y2, y3, ...
+~~~
 
 This program creates
 
