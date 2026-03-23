@@ -140,11 +140,7 @@ def serial_thread():
             time.sleep(0.5)
             continue
 
-        # Log & simpan ke file (jadwalkan GUI update ke main thread)
-        if state.full_path:
-            root.after(0, lambda d=data: log_update("Data Received", d))
-            tulis(data + "\n", state.full_path)
-
+        
         # Parse CSV: format "waktu_ms,val1,val2,..."
         parsed = data.split(",")
         if not parsed[0].strip().lstrip("-").isdigit():
@@ -154,6 +150,11 @@ def serial_thread():
             state.dx.append(int(parsed[0]))
         except ValueError:
             continue
+
+        # Log & simpan ke file (jadwalkan GUI update ke main thread)
+        if state.full_path:
+            root.after(0, lambda d=data: log_update("Data Received", d))
+            tulis(data + "\n", state.full_path)
 
         for i, val_str in enumerate(parsed[1:], start=0):
             if i >= len(state.dys):
@@ -175,7 +176,7 @@ def _redraw_plot():
         # Pastikan warna tersedia (jika dys lebih panjang dari pltcolor)
         color = state.pltcolor[i] if i < len(state.pltcolor) else None
         if len(state.dx) == len(state.dys[i]):
-            ax.plot(state.dx, state.dys[i], label=f"Sensor {i+1}", color=color)
+            ax.plot(state.dx, state.dys[i], label=f"{snsr_list[i] if i < len(snsr_list) else f'Sensor {i+1}'}", color=color)
     if ax.lines:
         ax.legend(loc="upper left")
     pltcanvas.draw()
@@ -218,10 +219,11 @@ def tombolstart():
     state.reset_data(n_sensors)
 
     tulis(
-        f"Pengambilan data dimulai pada {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
+        f"Date\t:\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
         state.full_path,
     )
-    tulis("waktu (ms), MAX31855_1, MAX31855_2, MAX6675_1, MAX6675_2, MAX6675_3\n", state.full_path)
+    snsr_list = var_snsrname.get().split(",")[:n_sensors]
+    tulis(f"t, {', '.join(snsr_list)}\n", state.full_path)
 
     ax.clear()
     pltcanvas.draw()
@@ -260,7 +262,7 @@ def simpan():
     try:
         dest = Path(file_path)
         dest.parent.mkdir(parents=True, exist_ok=True)
-        state.full_path.rename(dest)
+        state.full_path.copy(dest)
         state.full_path = dest
         log_update("Save", f"Data saved to {file_path}")
     except Exception as e:
@@ -282,6 +284,11 @@ def on_close():
 
 
 root.protocol("WM_DELETE_WINDOW", on_close)
+
+def clear_temp_files():
+    for file in TEMP_PATH.glob("data_*.csv"):
+        file.unlink(missing_ok=True)
+    log_update("Temp Files", "Cleared")
 
 
 # ─────────────────────────────────────────────
@@ -317,6 +324,7 @@ baudcb.current(0)
 
 # SAVE
 savebtn = ttk.Button(root, text="Save", command=simpan)
+cleartempbtn = ttk.Button(root, text="Clear Temp Files", command=clear_temp_files)
 
 # CONTROL FRAME
 ctlframe = tk.Frame(root)
@@ -328,6 +336,13 @@ var_dts = tk.StringVar()
 spinbx = ttk.Spinbox(ctlframe, from_=1, to=100, width=5, textvariable=var_dts, state="readonly")
 spinbx.set(5)
 spinbx.pack(side=tk.LEFT, padx=5)
+var_snsrname = tk.StringVar()
+snsr_list = []
+snsrnamelabel = ttk.Label(ctlframe, text="Sensor Name:")
+snsrnameentry = ttk.Entry(ctlframe, width=20, textvariable=var_snsrname)
+snsrnameentry.insert(0, "MAX31855_1,MAX31855_2,MAX6675_1,MAX6675_2,MAX6675_3")
+snsrnamelabel.pack(side=tk.LEFT, padx=5)
+snsrnameentry.pack(side=tk.LEFT, padx=5)
 
 # PLOT CANVAS
 pltcanvas = FigureCanvasTkAgg(fig, master=root)
@@ -342,6 +357,7 @@ comlstlabel.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 comlstcb.grid(row=0, column=1, padx=10, pady=10, sticky="we")
 comlstrefresh.grid(row=0, column=2, padx=10, pady=10, sticky="w")
 savebtn.grid(row=0, column=3, padx=10, pady=10, sticky="w")
+cleartempbtn.grid(row=0, column=4, padx=10, pady=10, sticky="w")
 baudlabel.grid(row=1, column=0, padx=10, pady=10, sticky="w")
 baudcb.grid(row=1, column=1, padx=10, pady=10, sticky="we")
 ctlframe.grid(row=1, column=2, columnspan=4, padx=10, pady=10, sticky="we")
