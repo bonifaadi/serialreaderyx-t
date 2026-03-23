@@ -12,7 +12,7 @@ x, y1, y2, y3, ...
 This program creates
 
 ~~~
-Pengambilan data dimulai pada <date>
+Date: <date>
 
 waktu (ms), MAX31855_1, MAX31855_2, MAX6675_1, MAX6675_2, MAX6675_3
 ~~~
