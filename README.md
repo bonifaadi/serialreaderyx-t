@@ -1,7 +1,7 @@
 # Serial Reader for y=x(t)
 
-[!IMPORTANT]
-This project was created to support research that requires data from sensors. This might be discontinued soon.
+> [!IMPORTANT]
+> This project was created to support research that requires data from sensors. This might be discontinued soon.
 
 This program was built for reading COM Seral which has this format and display it as plot with matplotlib
 
