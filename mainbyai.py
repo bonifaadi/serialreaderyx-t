@@ -33,6 +33,7 @@ class AppState:
         self.dx: list = []
         self.dys: list[list] = []
         self.pltcolor: list = []
+        self.snsr_list: list[str] = []
         self.ser: serial.Serial | None = None
         self.full_path: Path | None = None
         self.tmp_name: str = ""
@@ -175,8 +176,9 @@ def _redraw_plot():
     for i in range(n):
         # Pastikan warna tersedia (jika dys lebih panjang dari pltcolor)
         color = state.pltcolor[i] if i < len(state.pltcolor) else None
+        label_name = state.snsr_list[i] if i < len(state.snsr_list) and state.snsr_list[i].strip() else f"Sensor {i+1}"
         if len(state.dx) == len(state.dys[i]):
-            ax.plot(state.dx, state.dys[i], label=f"{snsr_list[i] if i < len(snsr_list) else f'Sensor {i+1}'}", color=color)
+            ax.plot(state.dx, state.dys[i], label=label_name, color=color)
     if ax.lines:
         ax.legend(loc="upper left")
     pltcanvas.draw()
@@ -218,12 +220,13 @@ def tombolstart():
     n_sensors = int(var_dts.get())
     state.reset_data(n_sensors)
 
+    state.snsr_list = [s.strip() for s in var_snsrname.get().split(",") if s.strip()]
+
     tulis(
         f"Date\t:\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
         state.full_path,
     )
-    snsr_list = var_snsrname.get().split(",")[:n_sensors]
-    tulis(f"t, {', '.join(snsr_list)}\n", state.full_path)
+    tulis(f"t, {', '.join(state.snsr_list)}\n", state.full_path)
 
     ax.clear()
     pltcanvas.draw()
